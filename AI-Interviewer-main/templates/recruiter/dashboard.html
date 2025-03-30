@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style/dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+
+                <a href="/" class="logo" style="text-decoration: none;">
+                    <span class="logo-icon">⏳</span>
+                    IntervoAI
+                  </a>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active" data-tab="dashboard">
+                        <a href="#dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    
+                    <li data-tab="candidates">
+                        <a href=candidates"><i class="fas fa-users"></i>Candidates</a>
+                    </li>
+                    <li data-tab="job-requests">
+                        <a href="/view_jobs"><i class="fas fa-file-alt"></i>All job posts</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar"></div>
+                    <div class="user-details">
+                        <h3 id="user-name">{{user_name}}</h3>
+                        <p>{{user_type|capitalize}}</p>
+                    </div>
+                </div>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+<main class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search for jobs, candidates...">
+        </div>
+        <div class="navbar-actions">
+            <button class="action-btn notifications">
+                <i class="fas fa-bell"></i>
+                <span class="badge">3</span>
+            </button>
+            <button class="action-btn messages">
+                <i class="fas fa-envelope"></i>
+                <span class="badge">5</span>
+            </button>
+            <button class="action-btn create-job">
+                <a href="/create_job" style="text-decoration: none;"> <i class="fas fa-plus"></i> Create Job </a>
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <section class="content-section active" id="dashboard-section">
+        <div class="section-header">
+            <h1>Dashboard Overview</h1>
+            <div class="date-filter">
+                <label for="date-range">Date Range:</label>
+                <select id="date-range">
+                    <option value="today">Today</option>
+                    <option value="week" selected>This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">This Quarter</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+            <h2>Welcome back, {{user_name}}!</h2>
+            <p>Here's an overview of your recruitment activities and statistics.</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Active Jobs</h3>
+                    <p class="stat-number">{{ active_jobs_count }}</p>
+                    <p class="stat-change positive"><i class="fas fa-arrow-up"></i> {{ active_jobs_growth }}% from last week</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Applications</h3>
+                    <p class="stat-number">{{ total_applications }}</p>
+                    <p class="stat-change positive"><i class="fas fa-arrow-up"></i> {{ applications_growth }}% from last week</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Interviews Scheduled</h3>
+                    <p class="stat-number">{{ interviews_count }}</p>
+                    <p class="stat-change positive"><i class="fas fa-arrow-up"></i> {{ interviews_growth }}% from last week</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Offers Made</h3>
+                    <p class="stat-number">{{ offers_count }}</p>
+                    <p class="stat-change {% if offers_growth > 0 %}positive{% else %}negative{% endif %}">
+                        <i class="fas fa-arrow-{% if offers_growth > 0 %}up{% else %}down{% endif %}"></i> 
+                        {{ offers_growth|abs }}% from last week
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities (Candidate Applications) -->
+        <div class="dashboard-row" id="candidates">
+            <div class="dashboard-card large">
+                <div class="card-header">
+                    <h2>Recent Applications</h2>
+                    <div class="card-actions">
+                        <button class="card-action-btn"><i class="fas fa-sync-alt"></i></button>
+                        <button class="card-action-btn"><i class="fas fa-ellipsis-v"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_applications %}
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Candidate Name</th>
+                                <th>Job Title</th>
+                                <th>Experience</th>
+                                <th>Applied On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in recent_applications %}
+                            <tr>
+                                <td class="candidate-info">
+                                    <div class="candidate-avatar">{{ application.name|first|upper }}</div>
+                                    <div class="candidate-details">
+                                        <h4>{{ application.name }}</h4>
+                                        <p>{{ application.email }}</p>
+                                    </div>
+                                </td>
+                                <td>{{ application.job_title }}</td>
+                                <td>{{ application.experience }} years</td>
+                                <td>{{ application.date_applied.strftime('%d %b, %Y') }}</td>
+                                <td class="actions">
+                                    <a href="/download_resume_candidate/{{ application.resume_path }}" class="btn-sm btn-primary">
+                                        <i class="fas fa-download"></i> Resume
+                                    </a>
+                                    <a href="/viewCandidate" class="btn-sm btn-secondary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No recent applications found.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="/view_all_applications" class="view-all-link">View All Applications</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Postings Overview -->
+        <div class="dashboard-row">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Job Postings</h2>
+                    <div class="card-actions">
+                        <a href="/create_job" class="btn-primary"><i class="fas fa-plus"></i> New Job</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_jobs %}
+                    <ul class="job-list">
+                        {% for job in recent_jobs %}
+                        <li class="job-item">
+                            <div class="job-details">
+                                <h4>{{ job.title }}</h4>
+                                <p>{{ job.company }} - {{ job.location }}</p>
+                                <div class="job-meta">
+                                    <span class="salary"><i class="fas fa-money-bill-alt"></i> {{ job.salary }}</span>
+                                    <span class="applications"><i class="fas fa-users"></i> {{ job.application_count }} applicants</span>
+                                </div>
+                            </div>
+                            <div class="job-actions">
+                                <a href="/job/{{ job._id }}" class="btn-sm btn-outline">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="/edit_job/{{ job._id }}" class="btn-sm btn-outline">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="/toggle_job_status/{{ job._id }}" class="btn-sm btn-outline {% if job.is_active %}active{% endif %}">
+                                    <i class="fas {% if job.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                </a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p>No job postings found.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="/view_jobs_candidate" class="view-all-link">View All Jobs</a>
+                </div>
+            </div>
+
+            <!-- Candidate Pipeline -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Candidate Pipeline</h2>
+                </div>
+                <div class="card-body">
+                    <div class="pipeline-stats">
+                        <div class="pipeline-stage">
+                            <h4>New</h4>
+                            <div class="pipeline-number">{{ pipeline_new }}</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <h4>Screening</h4>
+                            <div class="pipeline-number">{{ pipeline_screening }}</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <h4>Interview</h4>
+                            <div class="pipeline-number">{{ pipeline_interview }}</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <h4>Offer</h4>
+                            <div class="pipeline-number">{{ pipeline_offer }}</div>
+                        </div>
+                        <div class="pipeline-stage">
+                            <h4>Hired</h4>
+                            <div class="pipeline-number">{{ pipeline_hired }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+    </div>
+
+
+
+
+
+
+
+    <!-- Add this modal HTML right before the closing </body> tag -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Post a New Job</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <h3>About Job Posting</h3>
+                <p>Create a detailed job listing to attract qualified candidates. Your posting will be visible to potential applicants matching your requirements and will help you find the right talent for your organization.</p>
+               
+                <div class="test-details">
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <div class="detail-info">
+                            <h4>Visibility</h4>
+                            <p>30 days standard</p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-users"></i>
+                        <div class="detail-info">
+                            <h4>Applications</h4>
+                            <p>Track in real-time</p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-bullseye"></i>
+                        <div class="detail-info">
+                            <h4>Matching</h4>
+                            <p>Candidate suggestions</p>
+                        </div>
+                    </div>
+                </div>
+               
+                <div class="test-instructions">
+                    <h3>Posting Guidelines</h3>
+                    <ul>
+                        <li>Include comprehensive job description and requirements</li>
+                        <li>Specify experience level and necessary qualifications</li>
+                        <li>Add details about company culture and benefits</li>
+                        <li>Ensure salary range complies with transparency regulations</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="/create_job" class="start-test-btn">Post a Job</a>
+            </div>
+        </div>
+    </div>
+<!-- Add this CSS to the existing <style> section in the <head> -->
+<
+
+<!-- Add this JavaScript code to the existing <script> section -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the modal
+        const modal = document.getElementById('profileModal');
+        
+        // Get the button that opens the modal
+        const btn = document.querySelector('.create-job');
+        
+        // Get the <span> element that closes the modal
+        const closeBtn = document.querySelector('.close-modal');
+        
+        // When the user clicks the button, open the modal
+        btn.addEventListener('click', function(e) {
+            // Prevent the default link behavior
+            e.preventDefault();
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling on the background
+        });
+        
+        // When the user clicks on <span> (x), close the modal
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Enable scrolling again
+        });
+        
+        // When the user clicks anywhere outside of the modal, close it
+        window.addEventListener('click', function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Enable scrolling again
+            }
+        });
+    });
+</script>
+
+
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab navigation
+            const navItems = document.querySelectorAll('.sidebar-nav li');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Update active nav item
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show corresponding content section
+                    const tabId = this.getAttribute('data-tab');
+                    contentSections.forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === tabId + '-section') {
+                            section.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Handle hash changes for direct linking
+            function handleHashChange() {
+                const hash = window.location.hash.substring(1) || 'dashboard';
+                const tabElement = document.querySelector(`.sidebar-nav li[data-tab="${hash}"]`);
+                if (tabElement) {
+                    tabElement.click();
+                }
+            }
+            
+            // Initial hash handling and listen for changes
+            handleHashChange();
+            window.addEventListener('hashchange', handleHashChange);
+        });
+    </script>
+</body>
+</html>
